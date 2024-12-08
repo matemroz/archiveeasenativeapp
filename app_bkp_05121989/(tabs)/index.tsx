@@ -1,31 +1,33 @@
 import React, { useState } from 'react';
-import { StyleSheet, Button, Image, Alert, FlatList, TouchableOpacity } from 'react-native';
+import { StyleSheet, Button, Alert, FlatList, TouchableOpacity, Modal, Share } from 'react-native';
 import { View, Text } from '@/components/Themed';
 import DocumentScanner from 'react-native-document-scanner-plugin';
+import Pdf from 'react-native-pdf';
 
-export default function TabOneScreen() {
+export default function Tab() {
   const [scannedDocuments, setScannedDocuments] = useState([
     {
       name: 'Invoice_12345.pdf',
-      thumbnail: 'https://via.placeholder.com/100x100.png?text=Doc+1',
+      uri: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
     },
     {
       name: 'Contract_2023.pdf',
-      thumbnail: 'https://via.placeholder.com/100x100.png?text=Doc+2',
+      uri: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
     },
     {
       name: 'Receipt_56789.pdf',
-      thumbnail: 'https://via.placeholder.com/100x100.png?text=Doc+3',
+      uri: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
     },
   ]);
 
+  const [selectedDocument, setSelectedDocument] = useState<null | { name: string; uri: string }>(null);
   const handleScanDocument = async () => {
     try {
       const result = await DocumentScanner.scanDocument();
       /*if (result.croppedImage) {
         const newDocument = {
           name: `Scanned_${Date.now()}.pdf`,
-          thumbnail: result.croppedImage,
+          uri: result.croppedImage, // Zamień na właściwy URI pliku PDF
         };
         setScannedDocuments((prev) => [newDocument, ...prev]);
       } else {
@@ -36,10 +38,24 @@ export default function TabOneScreen() {
     }
   };
 
+  const handleShareDocument = async () => {
+    if (selectedDocument) {
+      try {
+        await Share.share({
+          message: `Check out this document: ${selectedDocument.name}`,
+          url: selectedDocument.uri,
+        });
+      } catch (error) {
+      // Alert.alert('Error', `Failed to share document: ${error.message}`);
+      console.log("Failed to share document");
+      }
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.scanContainer}>
-        <Button title="Scan" onPress={handleScanDocument} />
+        <Button title="Scan Document" onPress={handleScanDocument} />
       </View>
       <View style={styles.listContainer}>
         <Text style={styles.title}>Recently Scanned Documents</Text>
@@ -50,8 +66,10 @@ export default function TabOneScreen() {
             data={scannedDocuments}
             keyExtractor={(item, index) => `${item.name}-${index}`}
             renderItem={({ item }) => (
-              <TouchableOpacity style={styles.listItem}>
-                <Image source={{ uri: item.thumbnail }} style={styles.thumbnail} />
+              <TouchableOpacity
+                style={styles.listItem}
+                onPress={() => setSelectedDocument({ name: item.name, uri: item.uri })}
+              >
                 <Text style={styles.documentName}>{item.name}</Text>
               </TouchableOpacity>
             )}
@@ -62,21 +80,21 @@ export default function TabOneScreen() {
   );
 }
 
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     flexDirection: 'column',
   },
   scanContainer: {
-    flex: 1, // 1/3 wysokości
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#f0f0f0',
   },
   listContainer: {
-    flex: 2, // 2/3 wysokości
+    flex: 2,
     padding: 10,
-    backgroundColor: '#ffffff',
   },
   title: {
     fontSize: 18,
@@ -96,13 +114,27 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#ddd',
   },
-  thumbnail: {
-    width: 50,
-    height: 50,
-    marginRight: 10,
-    borderRadius: 5,
-  },
   documentName: {
     fontSize: 16,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  pdfViewer: {
+    width: '90%',
+    height: '70%',
+    marginBottom: 20,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '80%',
   },
 });
